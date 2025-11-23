@@ -132,6 +132,12 @@ app.post('/api/login', (req, res) => {
     });
 });
 
+// Logout endpoint (client clears token)
+app.post('/api/logout', (req, res) => {
+    // No server-side session to destroy for JWT; just respond OK
+    res.json({ message: 'Logged out' });
+});
+
 // Verify Email
 app.get('/api/verify-email/:token', (req, res) => {
     const { token } = req.params;

@@ -1,0 +1,46 @@
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: learning-tracker-server
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - WHATSAPP_API_URL=${WHATSAPP_API_URL}
+      - WHATSAPP_API_KEY=${WHATSAPP_API_KEY}
+    volumes:
+      - server-data:/app/data
+    restart: unless-stopped
+    networks:
+      - learning-tracker-network
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: learning-tracker-client
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    restart: unless-stopped
+    networks:
+      - learning-tracker-network
+
+volumes:
+  server-data:
+    driver: local
+
+networks:
+  learning-tracker-network:
+    driver: bridge
