@@ -1,14 +1,19 @@
 :root {
-  --primary: #646cff;
-  --bg: #f5f5f7;
-  --card-bg: #ffffff;
-  --text: #213547;
-  --text-secondary: #666;
+  --primary: #ff6f61;
+  /* vibrant coral */
+  --bg: #1a1a2e;
+  /* deep navy background */
+  --card-bg: #16213e;
+  /* slightly lighter card */
+  --text: #e0e0e0;
+  /* light gray text */
+  --text-secondary: #a0a0a0;
+  /* secondary gray */
 }
 
 body {
   margin: 0;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Outfit', system-ui, Avenir, Helvetica, Arial, sans-serif;
   background-color: var(--bg);
   color: var(--text);
   line-height: 1.5;
@@ -22,6 +27,15 @@ body {
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
+}
+
+.dashboard-container {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
 }
 
 h1 {
@@ -43,6 +57,7 @@ h1 {
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   margin-bottom: 2rem;
+  width: 50%;
 }
 
 .form-group {
@@ -190,6 +205,11 @@ button:disabled {
   background-color: #f0f0f0;
   color: var(--text);
 }
+
+.history {
+  margin-left: 3rem;
+}
+
 
 /* Mobile Responsiveness */
 @media (max-width: 600px) {

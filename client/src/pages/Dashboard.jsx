@@ -47,14 +47,9 @@ function Dashboard() {
     };
 
     return (
-        <div className="container">
-            <div className="header">
-                <h1>Learning Tracker</h1>
-                <button onClick={handleLogout} className="btn-secondary">Logout</button>
-            </div>
-            <p className="subtitle">Record what you learn. We'll remind you to review it.</p>
-
+        <div className="dashboard-container">
             <div className="card">
+                <p className="subtitle">Record what you learn. We'll remind you to review it.</p>
                 <h2>Add New Entry</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">

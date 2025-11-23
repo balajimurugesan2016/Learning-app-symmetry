@@ -7,6 +7,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import './App.css';
+import Header from './components/Header';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -25,6 +26,7 @@ function App() {
 
   return (
     <Router>
+      <Header />
       <Routes>
         <Route path="/login" element={<Login setToken={setToken} />} />
         <Route path="/register" element={<Register />} />
