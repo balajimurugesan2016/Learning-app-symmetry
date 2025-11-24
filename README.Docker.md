@@ -20,6 +20,14 @@ This guide explains how to run the Learning Tracker application using Docker.
    - Email SMTP settings
    - WhatsApp API credentials
 
+   > **Note for Gmail Users:**
+   > If using Gmail, you **must** use an App Password, not your regular login password.
+   > 1. Go to [Google Account Security](https://myaccount.google.com/security).
+   > 2. Enable 2-Step Verification if not already enabled.
+   > 3. Search for "App Passwords" (or find it under 2-Step Verification).
+   > 4. Generate a new App Password for "Mail" / "Other".
+   > 5. Use this 16-character code as your `EMAIL_PASS`.
+
 3. **Build and run with Docker Compose**
    ```bash
    docker-compose up -d

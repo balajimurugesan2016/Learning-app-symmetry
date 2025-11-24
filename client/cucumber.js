@@ -1,7 +1,8 @@
 export default {
     default: {
-        paths: ['features/**/*.feature'],
-        require: ['features/step_definitions/**/*.js', 'features/support/**/*.js'],
+        // Updated paths to match actual project structure
+        paths: ['client/features/**/*.feature'],
+        require: ['client/features/step_definitions/**/*.js', 'client/features/support/**/*.js'],
         format: ['progress-bar', ['html', 'cucumber-report.html']],
     }
 };

@@ -30,3 +30,5 @@ Then('I should see the dashboard', async function () {
     await expect(this.page).toHaveURL('http://localhost:5173/');
 
 });
+
+

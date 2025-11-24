@@ -1,4 +1,5 @@
 Feature: Login
+
   Background:
     Given a verified user exists with email "test@example.com" and password "password"
 

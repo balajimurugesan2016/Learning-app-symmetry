@@ -255,6 +255,20 @@ app.post('/api/learnings', auth, async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
+// Delete user by username
+app.delete('/api/users/:username', async (req, res) => {
+  const { username } = req.params;
+  try {
+    const deleted = await User.destroy({ where: { username } });
+    if (deleted) {
+      return res.json({ message: 'User deleted' });
+    }
+    res.status(404).json({ error: 'User not found' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 if (require.main === module) {
     app.listen(PORT, () => {
