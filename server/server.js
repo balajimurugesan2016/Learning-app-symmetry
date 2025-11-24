@@ -3,7 +3,7 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-const db = require('./database');
+const { User, Learning } = require('./database');
 const { startScheduler } = require('./scheduler');
 const auth = require('./middleware/auth');
 require('dotenv').config();
@@ -26,7 +26,6 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Helper to send email
 // Helper to send email
 const sendEmail = async (to, subject, html) => {
     try {
@@ -91,33 +90,34 @@ app.post('/api/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-        const sql = `INSERT INTO users (username, email, password_hash, phone_number, verification_token) VALUES (?, ?, ?, ?, ?)`;
-        db.run(sql, [username, email, hashedPassword, phone_number, verificationToken], async function (err) {
-            if (err) {
-                return res.status(400).json({ error: err.message });
-            }
-
-            const verificationLink = `http://localhost:5173/verify-email/${verificationToken}`;
-            await sendEmail(
-                email,
-                'Verify your email',
-                `<p>Please click <a href="${verificationLink}">here</a> to verify your email.</p>`
-            );
-
-            res.status(201).json({ message: 'User registered. Please check email to verify.' });
+        await User.create({
+            username,
+            email,
+            password_hash: hashedPassword,
+            phone_number,
+            verification_token: verificationToken
         });
+
+        const verificationLink = `http://localhost:5173/verify-email/${verificationToken}`;
+        await sendEmail(
+            email,
+            'Verify your email',
+            `<p>Please click <a href="${verificationLink}">here</a> to verify your email.</p>`
+        );
+
+        res.status(201).json({ message: 'User registered. Please check email to verify.' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
 // Login
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).send('All fields are required');
 
-    db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        const user = await User.findOne({ where: { email } });
         if (!user) return res.status(404).send('User not found');
 
         const validPassword = await bcrypt.compare(password, user.password_hash);
@@ -129,7 +129,9 @@ app.post('/api/login', (req, res) => {
 
         const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '2h' });
         res.json({ token, user: { id: user.id, username: user.username, email: user.email } });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Logout endpoint (client clears token)
@@ -139,39 +141,45 @@ app.post('/api/logout', (req, res) => {
 });
 
 // Verify Email
-app.get('/api/verify-email/:token', (req, res) => {
+app.get('/api/verify-email/:token', async (req, res) => {
     const { token } = req.params;
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        db.run('UPDATE users SET is_verified = 1, verification_token = NULL WHERE email = ?', [decoded.email], function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.send('Email verified successfully');
-        });
+        await User.update(
+            { is_verified: 1, verification_token: null },
+            { where: { email: decoded.email } }
+        );
+        res.send('Email verified successfully');
     } catch (err) {
         res.status(400).send('Invalid or expired token');
     }
 });
 
 // Forgot Password
-app.post('/api/forgot-password', (req, res) => {
+app.post('/api/forgot-password', async (req, res) => {
     const { email } = req.body;
-    db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        const user = await User.findOne({ where: { email } });
         if (!user) return res.status(404).send('User not found');
 
         const resetToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        db.run('UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?', [resetToken, Date.now() + 3600000, user.id], async (err) => {
-            if (err) return res.status(500).json({ error: err.message });
+        const resetTokenExpiry = Date.now() + 3600000;
 
-            const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
-            await sendEmail(
-                email,
-                'Reset Password',
-                `<p>Click <a href="${resetLink}">here</a> to reset your password.</p>`
-            );
-            res.send('Password reset link sent');
-        });
-    });
+        await User.update(
+            { reset_token: resetToken, reset_token_expiry: resetTokenExpiry },
+            { where: { id: user.id } }
+        );
+
+        const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
+        await sendEmail(
+            email,
+            'Reset Password',
+            `<p>Click <a href="${resetLink}">here</a> to reset your password.</p>`
+        );
+        res.send('Password reset link sent');
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Reset Password
@@ -181,52 +189,60 @@ app.post('/api/reset-password', async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        db.run('UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ? AND reset_token = ?', [hashedPassword, decoded.id, token], function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            if (this.changes === 0) return res.status(400).send('Invalid token');
-            res.send('Password reset successfully');
-        });
+        const [updatedCount] = await User.update(
+            { password_hash: hashedPassword, reset_token: null, reset_token_expiry: null },
+            { where: { id: decoded.id, reset_token: token } }
+        );
+
+        if (updatedCount === 0) return res.status(400).send('Invalid token');
+        res.send('Password reset successfully');
     } catch (err) {
         res.status(400).send('Invalid or expired token');
     }
 });
 
 // Get all learnings (Protected)
-app.get('/api/learnings', auth, (req, res) => {
-    db.all('SELECT * FROM learnings WHERE user_id = ? ORDER BY created_at DESC', [req.user.id], (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.json({ data: rows });
-    });
+app.get('/api/learnings', auth, async (req, res) => {
+    try {
+        const learnings = await Learning.findAll({
+            where: { user_id: req.user.id },
+            order: [['created_at', 'DESC']]
+        });
+        res.json({ data: learnings });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Add a new learning (Protected)
-app.post('/api/learnings', auth, (req, res) => {
-    const { content } = req.body; // Phone number taken from user profile
+app.post('/api/learnings', auth, async (req, res) => {
+    const { content } = req.body;
     if (!content) {
         res.status(400).json({ error: 'Content is required' });
         return;
     }
 
     const created_at = new Date().toISOString();
-    const sql = 'INSERT INTO learnings (content, created_at, user_id) VALUES (?, ?, ?)';
-    const params = [content, created_at, req.user.id];
-
-    db.run(sql, params, function (err) {
-        if (err) {
-            res.status(400).json({ error: err.message });
-            return;
-        }
+    try {
+        const learning = await Learning.create({
+            content,
+            created_at,
+            user_id: req.user.id
+        });
         res.json({
             message: 'success',
-            data: { id: this.lastID, content, created_at, user_id: req.user.id }
+            data: learning
         });
-    });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    startScheduler();
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+        startScheduler();
+    });
+}
+
+module.exports = app;
