@@ -79,6 +79,24 @@ app.get('/api/test-whatsapp', async (req, res) => {
     }
 });
 
+// Test Endpoint: Create Verified User
+app.post('/api/test/create-user', async (req, res) => {
+    const { username, email, password } = req.body;
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = await User.create({
+            username,
+            email,
+            password_hash: hashedPassword,
+            phone_number: '1234567890',
+            is_verified: 1
+        });
+        res.status(201).json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Register
 app.post('/api/register', async (req, res) => {
     const { username, email, password, phone_number } = req.body;
