@@ -72,7 +72,7 @@ function Dashboard() {
                 {learnings.length === 0 ? (
                     <p className="empty-state">No entries yet. Start learning!</p>
                 ) : (
-                    <div className="list">
+                    <div className="list scrollable-history">
                         {learnings.map((item) => (
                             <div key={item.id} className="list-item">
                                 <p className="content">{item.content}</p>

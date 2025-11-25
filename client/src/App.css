@@ -36,6 +36,31 @@ body {
   display: flex;
   flex-direction: row;
   gap: 2rem;
+  align-items: flex-start;
+  /* Align items at the top */
+}
+
+.card {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+  width: 50%;
+  flex-shrink: 0;
+  /* Prevents the card from shrinking */
+}
+
+.history {
+  margin-left: 3rem;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  padding-right: 10px;
+  width: calc(50% - 3rem);
+  flex-shrink: 0;
+  /* Prevents the history from shrinking */
+  /* Ensure it doesn't overflow the container */
+  flex: 1;
 }
 
 h1 {
@@ -208,6 +233,29 @@ button:disabled {
 
 .history {
   margin-left: 3rem;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  padding-right: 10px;
+  width: calc(50% - 3rem);
+}
+
+/* Make scrollbars thinner and more subtle */
+.history::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.history::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 10px;
+}
+
+.history::-webkit-scrollbar-thumb:hover {
+  background: #ff5247;
 }
 
 
